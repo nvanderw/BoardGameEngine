@@ -210,9 +210,6 @@ public final class PhotosynthesisPosition implements IPosition<IPhotosynthesisMo
             return;
         }
 
-        // End turn
-        moveList.addQuietMove(new EndTurn(), this);
-
         // Buy actions
         for (int level = 0; level < 4; level++) {
             final PlayerBoard playerBoard = playerBoards[currentPlayer];
@@ -251,6 +248,9 @@ public final class PhotosynthesisPosition implements IPosition<IPhotosynthesisMo
                 }
             }
         }
+
+        // End turn
+        moveList.addQuietMove(new EndTurn(), this);
     }
 
     private void getNearCoordinates(Coordinate coord, int distance, Consumer<Coordinate> consumer) {
