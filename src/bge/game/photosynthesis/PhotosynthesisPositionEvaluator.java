@@ -20,7 +20,7 @@ public class PhotosynthesisPositionEvaluator implements IPositionEvaluator<IPhot
                 if (i != currentPlayer) {
                     int otherPlayerScore = result[i];
                     draw = draw && otherPlayerScore == currentPlayerScore;
-                    if (otherPlayerScore > currentPlayer) {
+                    if (otherPlayerScore > currentPlayerScore) {
                         return AnalysisResult.LOSS;
                     }
                 }
