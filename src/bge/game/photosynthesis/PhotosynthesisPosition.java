@@ -12,7 +12,7 @@ import bge.igame.IDeepCopy;
 import bge.igame.IPosition;
 import bge.igame.MoveList;
 
-public final class PhotosynthesisPosition implements IPosition<IPhotosynthesisMove>, PhotosynthesisConstants {
+public class PhotosynthesisPosition implements IPosition<IPhotosynthesisMove>, PhotosynthesisConstants {
     final int numPlayers;
 
     int currentPlayer;
@@ -45,7 +45,7 @@ public final class PhotosynthesisPosition implements IPosition<IPhotosynthesisMo
         scoringTokensRemaining = Arrays.stream(SCORING_TOKENS).mapToInt(a -> a.length).toArray();
     }
 
-    private PhotosynthesisPosition(
+    protected PhotosynthesisPosition(
             int numPlayers,
             int currentPlayer,
             int firstPlayer,

@@ -40,14 +40,14 @@ public class PhotosynthesisPositionPerfTest {
 
     @Test
     @Disabled
-    public void testCountAtDepth8After5Moves() {
+    public void testCountAtDepth8After4Moves() {
         ArrayMoveList<IPhotosynthesisMove> moveList = new ArrayMoveList<>(64);
         PhotosynthesisPosition position = new PhotosynthesisPosition(2);
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < 4; ++i) {
             position.getPossibleMoves(moveList);
             position.makeMove(moveList.get(0));
             moveList.clear();
         }
-        PerfTest.countPos(position, 8, 10726762); // XXX is this correct ?
+        PerfTest.countPos(position, 8, 6520895); // XXX is this correct ?
     }
 }

@@ -19,6 +19,7 @@ import bge.strategy.ts.forkjoin.ForkableTreeSearchFactory.ForkableType;
 import bge.strategy.ts.montecarlo.MonteCarloTreeSearcher;
 import bge.strategy.ts.montecarlo.RandomMonteCarloChildren;
 import bge.strategy.ts.montecarlo.WeightedMonteCarloChildren;
+import bge.strategy.ts.wrapped.WrappedTreeSearcher;
 import gt.settings.GameSettings;
 import gt.settings.StringSetting;
 
@@ -60,6 +61,8 @@ public class PlayerInfo {
     public static final String MC_WEIGHTED = "Weighted";
     public static final String[] ALL_MC_STRATEGIES = { MC_RANDOM, MC_WEIGHTED };
 
+    public static final String KEY_CONSTRAINTS = "KeyConstraints";
+    public static final String CONSTRAINT_NONE = "None";
     public static final String KEY_ESCAPE_EARLY = "KeyEscapeEarly";
     public static final String KEY_EVALUATOR = "KeyEvaluator";
     public static final String KEY_NUM_THREADS = "KeyNumThreads";
@@ -126,6 +129,15 @@ public class PlayerInfo {
         } else {
             throw new IllegalStateException("Unknown tree searcher: " + iStrategy);
         }
+
+        if (optionsMap.containsKey(KEY_CONSTRAINTS)) {
+            String constraintOption = optionsMap.get(KEY_CONSTRAINTS);
+
+            if (!CONSTRAINT_NONE.equals(constraintOption)) {
+                treeSearcher = new WrappedTreeSearcher<>(treeSearcher, GameRegistry.getConstraint(gameName, constraintOption));
+            }
+        }
+
         long msPerMove = Long.parseLong(optionsMap.get(KEY_MS_PER_MOVE));
         String escapeEarlyStr = optionsMap.get(KEY_ESCAPE_EARLY);
         boolean escapeEarly = escapeEarlyStr == null ? true : Boolean.parseBoolean(escapeEarlyStr);

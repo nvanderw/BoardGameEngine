@@ -4,46 +4,48 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Stack;
-import java.util.function.Supplier;
 
-import bge.game.photosynthesis.PhotosynthesisPosition.Buy;
-import bge.game.photosynthesis.PhotosynthesisPosition.EndTurn;
-import bge.game.photosynthesis.PhotosynthesisPosition.MainBoard;
-import bge.game.photosynthesis.PhotosynthesisPosition.PlayerBoard;
-import bge.game.photosynthesis.PhotosynthesisPosition.Seed;
-import bge.game.photosynthesis.PhotosynthesisPosition.Setup;
-import bge.game.photosynthesis.PhotosynthesisPosition.Upgrade;
 import bge.igame.Coordinate;
 import bge.igame.IPosition;
 import bge.igame.MoveList;
 
-public class TrimmedPhotosynthesisPosition implements IPosition<IPhotosynthesisMove> {
-    private final PhotosynthesisPosition position;
-
+public class TrimmedPhotosynthesisPosition extends PhotosynthesisPosition {
     private final Stack<IPhotosynthesisMove> cursors;
 
     public TrimmedPhotosynthesisPosition(PhotosynthesisPosition position) {
-        this(position, ((Supplier<Stack<IPhotosynthesisMove>>) (() -> {
-            Stack<IPhotosynthesisMove> initialCursors = new Stack<>();
-            initialCursors.push(null);
-            return initialCursors;
-        })).get());
+        super(
+                position.numPlayers,
+                position.currentPlayer,
+                position.firstPlayer,
+                position.mainBoard,
+                position.playerBoards,
+                position.setupPlayerRoundsRemaining,
+                position.playerRoundsRemaining,
+                position.scoringTokensRemaining);
+
+        cursors = new Stack<>();
+        cursors.add(null);
     }
 
     private TrimmedPhotosynthesisPosition(PhotosynthesisPosition position, Stack<IPhotosynthesisMove> cursors) {
-        this.position = position;
-        this.cursors = cursors;
-    }
+        super(
+                position.numPlayers,
+                position.currentPlayer,
+                position.firstPlayer,
+                position.mainBoard,
+                position.playerBoards,
+                position.setupPlayerRoundsRemaining,
+                position.playerRoundsRemaining,
+                position.scoringTokensRemaining);
 
-    public int[] getResult() {
-        return position.getResult();
+        this.cursors = cursors;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public IPosition<IPhotosynthesisMove> createCopy() {
         return new TrimmedPhotosynthesisPosition(
-                (PhotosynthesisPosition) position.createCopy(),
+                (PhotosynthesisPosition) super.createCopy(),
                 (Stack<IPhotosynthesisMove>) cursors.clone());
     }
 
@@ -52,7 +54,7 @@ public class TrimmedPhotosynthesisPosition implements IPosition<IPhotosynthesisM
         List<IPhotosynthesisMove> moves = new ArrayList<>();
         IPhotosynthesisMove cursor = cursors.peek();
 
-        position.getPossibleMoves(new MoveList<IPhotosynthesisMove>() {
+        super.getPossibleMoves(new MoveList<IPhotosynthesisMove>() {
             @Override
             public MoveList<IPhotosynthesisMove> subList(int beginIndex) {
                 return null;
@@ -102,20 +104,13 @@ public class TrimmedPhotosynthesisPosition implements IPosition<IPhotosynthesisM
 
         for (IPhotosynthesisMove move : moves) {
             if (PhotosynthesisMoveComparator.INSTANCE.compare(cursor, move) <= 0) {
-                moveList.addQuietMove(move, position);
+                moveList.addQuietMove(move, this);
             }
         }
     }
 
     @Override
-    public int getCurrentPlayer() {
-        return position.getCurrentPlayer();
-    }
-
-    @Override
     public void makeMove(IPhotosynthesisMove move) {
-        int player = position.getCurrentPlayer();
-
         if (move instanceof Setup || move instanceof EndTurn) {
             // Another player's turn has begun; clear the cursor
             cursors.push(null);
@@ -124,12 +119,12 @@ public class TrimmedPhotosynthesisPosition implements IPosition<IPhotosynthesisM
             cursors.push(move);
         }
 
-        position.makeMove(move);
+        super.makeMove(move);
     }
 
     @Override
     public void unmakeMove(IPhotosynthesisMove move) {
-        position.unmakeMove(move);
+        super.unmakeMove(move);
 
         cursors.pop();
     }
@@ -219,25 +214,5 @@ public class TrimmedPhotosynthesisPosition implements IPosition<IPhotosynthesisM
         private int coordinateToInt(Coordinate coordinate) {
             return coordinate.x + coordinate.y * PhotosynthesisPosition.MainBoard.AXIS_LENGTH;
         }
-    }
-
-    public int getSunPosition() {
-        return position.getSunPosition();
-    }
-
-    public int getPlayerRoundsRemaining() {
-        return position.playerRoundsRemaining;
-    }
-
-    public MainBoard getMainBoard() {
-        return position.mainBoard;
-    }
-
-    public int getNumPlayers() {
-        return position.numPlayers;
-    }
-
-    public PlayerBoard getPlayerBoard(int i) {
-        return position.playerBoards[i];
     }
 }

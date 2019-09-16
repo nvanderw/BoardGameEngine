@@ -45,7 +45,7 @@ import gt.settings.GameSettings;
 import gt.util.EventQueue;
 
 public class BoardGameState<M> implements GameState, Sized {
-    private static final int CONTROLLER_PANEL_HEIGHT = 170;
+    private static final int CONTROLLER_PANEL_HEIGHT = 200;
     private static final int PLAYER_SELECTION_WIDTH = 180;
 
     private double width;

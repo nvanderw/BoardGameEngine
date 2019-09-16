@@ -12,8 +12,11 @@ import bge.game.gomoku.GomokuGame;
 import bge.game.gomoku.GomokuPositionEvaluator;
 import bge.game.papersoccer.PaperSoccerGame;
 import bge.game.papersoccer.PaperSoccerPositionEvaluator;
+import bge.game.photosynthesis.IPhotosynthesisMove;
 import bge.game.photosynthesis.PhotosynthesisGame;
+import bge.game.photosynthesis.PhotosynthesisPosition;
 import bge.game.photosynthesis.PhotosynthesisPositionEvaluator;
+import bge.game.photosynthesis.TrimmedPhotosynthesisPosition;
 import bge.game.tictactoe.TicTacToeGame;
 import bge.game.tictactoe.TicTacToePositionEvaluator;
 import bge.game.ultimatetictactoe.UTTTProbabilityPositionEvaluator;
@@ -23,11 +26,8 @@ import bge.gui.gamestate.MainMenuState;
 import bge.igame.IGame;
 import bge.igame.IPosition;
 import bge.igame.player.ComputerPlayer;
-import bge.igame.player.PlayerInfo;
-import bge.igame.player.PlayerOptions;
-import bge.igame.player.PlayerOptions.CPOptionIntRange;
-import bge.igame.player.PlayerOptions.CPOptionStringArray;
 import bge.main.GameRegistry.GameRegistryItem;
+import bge.strategy.ts.wrapped.IPositionWrapper;
 import gt.component.GamePanel;
 import gt.component.MainFrame;
 import gt.gamestate.GameStateManager;
@@ -41,44 +41,14 @@ public class BoardGameEngineMain {
     public static final Font DEFAULT_SMALL_FONT = new Font(Font.DIALOG, Font.PLAIN, 12);
     public static final int DEFAULT_SMALL_FONT_HEIGHT = 18;
 
-    public static PlayerOptions createComputerPlayerOptions(IGame<?, ?> game, int minMs, int maxMs, int maxThreads, int maxSimulations) {
-        PlayerOptions msPerMoveOption = new PlayerOptions("time", new CPOptionIntRange(PlayerInfo.KEY_MS_PER_MOVE, minMs, maxMs));
-        PlayerOptions threadOption = new PlayerOptions("threads", new CPOptionIntRange(PlayerInfo.KEY_NUM_THREADS, 1, maxThreads));
-        PlayerOptions simulationsOption = new PlayerOptions("sims", new CPOptionIntRange(PlayerInfo.KEY_NUM_SIMULATIONS, 1, maxSimulations));
-        PlayerOptions evaluatorOption = new PlayerOptions("Evaluator", new CPOptionStringArray(PlayerInfo.KEY_EVALUATOR,
-                GameRegistry.getPositionEvaluatorNames(game.getName())));
-
-        PlayerOptions fjStrategyOptions = new PlayerOptions("Strategy",
-                new CPOptionStringArray(PlayerInfo.KEY_FJ_STRATEGY, PlayerInfo.ALL_FJ_STRATEGIES));
-        for (String fjStrategy : PlayerInfo.ALL_FJ_STRATEGIES) {
-            fjStrategyOptions.addSubOption(fjStrategy, evaluatorOption);
-            fjStrategyOptions.addSubOption(fjStrategy, msPerMoveOption);
-            fjStrategyOptions.addSubOption(fjStrategy, threadOption);
-        }
-
-        PlayerOptions mcStrategyOptions = new PlayerOptions("Strategy",
-                new CPOptionStringArray(PlayerInfo.KEY_MC_STRATEGY, PlayerInfo.ALL_MC_STRATEGIES));
-        for (String mcStrategy : PlayerInfo.ALL_MC_STRATEGIES) {
-            mcStrategyOptions.addSubOption(mcStrategy, evaluatorOption);
-            mcStrategyOptions.addSubOption(mcStrategy, msPerMoveOption);
-            mcStrategyOptions.addSubOption(mcStrategy, simulationsOption);
-        }
-
-        return new PlayerOptions("Search Type",
-                new CPOptionStringArray(PlayerInfo.KEY_ISTRATEGY, PlayerInfo.ALL_TREE_SEARCHERS))
-                        .addSubOption(PlayerInfo.TS_FORK_JOIN, fjStrategyOptions)
-                        .addSubOption(PlayerInfo.TS_MONTE_CARLO, mcStrategyOptions);
-    }
-
-    private static <M, P extends IPosition<M>> void registerGame(IGame<M, P> game,
-            List<Pair<String, IPositionEvaluator<M, P>>> positionEvaluators,
-            int minMsPerMove, int maxMsPerMove, int maxThreads, int maxSimulations) {
+    private static <M, P extends IPosition<M>> GameRegistryItem<M, P> registerGame(IGame<M, P> game,
+            List<Pair<String, IPositionEvaluator<M, P>>> positionEvaluators) {
         GameRegistryItem<M, P> gameRegistryItem = GameRegistry.registerGame(game).addPlayer(ComputerPlayer.NAME);
         for (Pair<String, IPositionEvaluator<M, P>> nameEvaluator : positionEvaluators) {
             gameRegistryItem.addPositionEvaluator(nameEvaluator.getFirst(), nameEvaluator.getSecond());
         }
-        PlayerOptions computerPlayerOptions = createComputerPlayerOptions(game, minMsPerMove, maxMsPerMove, maxThreads, maxSimulations);
-        gameRegistryItem.setPlayerOptions(ComputerPlayer.NAME, computerPlayerOptions);
+
+        return gameRegistryItem;
     }
 
     public static void registerGames() {
@@ -86,30 +56,34 @@ public class BoardGameEngineMain {
 
         // TODO ChessConstants.MAX_REASONABLE_DEPTH, etc
         registerGame(new ChessGame(),
-                Collections.singletonList(Pair.valueOf("Evaluator1", new ChessPositionEvaluator())),
-                50, 10000, maxThreads, 20);
+                Collections.singletonList(Pair.valueOf("Evaluator1", new ChessPositionEvaluator())))
+        .createComputerPlayerOptions(50, 10000, maxThreads, 20);
 
         registerGame(new TicTacToeGame(),
-                Collections.singletonList(Pair.valueOf("Evaluator1", new TicTacToePositionEvaluator())),
-                50, 10000, maxThreads, 20);
+                Collections.singletonList(Pair.valueOf("Evaluator1", new TicTacToePositionEvaluator())))
+        .createComputerPlayerOptions(50, 10000, maxThreads, 20);
 
         registerGame(new UltimateTicTacToeGame(),
                 Arrays.asList(Pair.valueOf("Evaluator1", new UltimateTicTacToePositionEvaluator()),
-                        Pair.valueOf("ProbGuess1", new UTTTProbabilityPositionEvaluator())),
-                50, 10000, maxThreads, 20);
+                        Pair.valueOf("ProbGuess1", new UTTTProbabilityPositionEvaluator())))
+        .createComputerPlayerOptions(50, 10000, maxThreads, 20);
 
         // TODO GomokuMoveList.class
         registerGame(new GomokuGame(),
-                Collections.singletonList(Pair.valueOf("Evaluator1", new GomokuPositionEvaluator())),
-                50, 10000, maxThreads, 20);
+                Collections.singletonList(Pair.valueOf("Evaluator1", new GomokuPositionEvaluator())))
+                        .createComputerPlayerOptions(50, 10000, maxThreads, 20);
 
         registerGame(new PaperSoccerGame(),
-                Collections.singletonList(Pair.valueOf("Evaluator1", new PaperSoccerPositionEvaluator())),
-                50, 10000, maxThreads, 20);
+                Collections.singletonList(Pair.valueOf("Evaluator1", new PaperSoccerPositionEvaluator())))
+                        .createComputerPlayerOptions(50, 10000, maxThreads, 20);
+
+        IPositionWrapper<IPhotosynthesisMove, PhotosynthesisPosition, TrimmedPhotosynthesisPosition> wrapper = TrimmedPhotosynthesisPosition::new;
 
         registerGame(new PhotosynthesisGame(),
-                Collections.singletonList(Pair.valueOf("Evaluator1", new PhotosynthesisPositionEvaluator())),
-                50, 10000, maxThreads, 20);
+                Collections.singletonList(Pair.valueOf("Evaluator1", new PhotosynthesisPositionEvaluator())))
+        .addPositionWrapper("None", null)
+                        .addPositionWrapper("Ordered", wrapper)
+                        .createComputerPlayerOptions(50, 10000, maxThreads, 20);
 
         // TODO Sodoku
     }
